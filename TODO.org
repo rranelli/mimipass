@@ -1,6 +1,7 @@
 * Things to do/figure out
   - [ ] Figure out how to stop gpg cache of the passphrase.
   - [ ] Figure out how to set a timeout for gpg passphrase.
+  - [ ] Integrate with Emacs to load irc passwords
   - [X] Figure out how to transport the keyring around. (export && imports)
-  - [ ] Migrate `pass.org` to Mimipass
+  - [X] Migrate `pass.org` to Mimipass
   - [X] Write a installation script (allow Mimipass to update itself ?)
