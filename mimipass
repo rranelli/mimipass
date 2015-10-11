@@ -1,12 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-### TODO:
-# 1. Figure out how to stop gpg cache of the passphrase.
-# 2. Figure out how to set a timeout for gpg passphrase.
-# 3. Figure out how to transport the keyring around. (export && imports)
-# 4. Migrate `pass.org` to mimipass
-
 mimipass_home=$(cd $(dirname ${BASH_SOURCE[0]}) && pwd)
 mimipass_recipient=renanranelli@gmail.com
 

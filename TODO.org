@@ -1,0 +1,6 @@
+* Things to do/figure out
+  1. Figure out how to stop gpg cache of the passphrase.
+  2. Figure out how to set a timeout for gpg passphrase.
+  3. Figure out how to transport the keyring around. (export && imports)
+  4. Migrate `pass.org` to Mimipass
+  5. Write a installation script (allow Mimipass to update itself ?)
