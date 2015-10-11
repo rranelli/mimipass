@@ -1,14 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Required environment variables
 mimipass_home=$(cd $(dirname ${BASH_SOURCE[0]}) && pwd)
 mimipass_recipient=renanranelli@gmail.com
 
-# colors
+# Text helper colors
 txtred='\e[0;31m' # Red
 txtgrn='\e[0;32m' # Green
-clroff='\e[0m' # Text Reset
+clroff='\e[0m'    # Color reset
 
+#
+## Utility functions
+#
 ensure() {
     errors=""
     verify=$1 && shift
@@ -25,13 +29,16 @@ ensure-env() { ensure "test -v" "$@" ;}
 ensure-programs() { ensure which "$@" ;}
 
 # Verify if dependencies are available
-ensure-programs gpg xclip
+ensure-programs gpg xclip openssl gpg-agent tr xargs
 
 # Verify that the required environment variables are set
 ensure-env mimipass_home mimipass_recipient
 
+#
+## Features
+#
 mimipass-list() {
-    echo 'Mimipass available passwords:'
+    echo 'Mimipass available passwords:' >&2
     ls -1 $mimipass_home/*.enc \
         | xargs -I {} -n1 basename {} .enc \
         | xargs -I{} -n1 echo "* {}"
@@ -42,25 +49,45 @@ mimipass-get() {
     passwd_file=$mimipass_home/$passwd_name.enc
 
     if [ -f $passwd_file ]; then
-n        gpg -r $mimipass_recipient -d $passwd_file \
-            | xclip -i -selection clipboard
-        echo -e "${txtgrn}Password ${txtred}[$passwd_name] ${txtgrn}sent to clipboard :)${clroff}"
-
+        gpg -r $mimipass_recipient -d $passwd_file
     else
-        echo -e "${txtred}Couldn't find \`${passwd_name}\` in the passwd list"
+        echo -e "${txtred}Couldn't find [ ${passwd_name} ] in the passwd list" >&2
+        return 1
     fi
+}
+
+mimipass-copy() {
+    passwd_name=$1
+
+    mimipass-get $passwd_name | xclip -i -selection clipboard \
+        && echo -e "${txtgrn}Password ${txtred}[ $passwd_name ] ${txtgrn}sent to clipboard :)${clroff}" >&2
 }
 
 mimipass-set() {
     passwd_name=$1
     passwd_file=$mimipass_home/$passwd_name.enc
 
-    echo -e "${txtgrn}Type the text. Press C-d when done.${clroff}"
+    echo -e "${txtgrn}Type the text. Press C-d when done.${clroff}" >&2
     gpg --yes -r $mimipass_recipient -o $passwd_file -e
 
+    echo -e "${txtgrn}Done!" >&2
+}
+
+mimipass-gen() {
+    size=${1:-64}
+
+    openssl rand -base64 128 \
+        | tr -d '\n' \
+        | cut -c -$size
+}
+
+mimipass-gen-set() {
+    passwd_name=$1
+
+    mimipass-gen | mimipass-set $passwd_name 2>/dev/null
     echo -e "${txtgrn}Done!"
 }
 
-# invoke the program
+# Invoke!
 cmd=$1 && shift
 mimipass-$cmd $@
