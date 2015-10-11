@@ -18,7 +18,7 @@ ensure() {
     verify=$1 && shift
     for verifiable in "$@"; do
         $verify $verifiable >/dev/null \
-            || errors+="${txtred}Mimipass requires \`$verify $verifiable\` to return true.\n"
+            || errors+="${txtred}Mimipass requires \`$verify $verifiable\` to return true.\n${clroff}"
     done
 
     [ -z "$errors" ] || { echo -e "${errors%\\n}" && exit 1 ;}
@@ -29,7 +29,7 @@ ensure-env() { ensure "test -v" "$@" ;}
 ensure-programs() { ensure which "$@" ;}
 
 # Verify if dependencies are available
-ensure-programs gpg xclip openssl gpg-agent tr xargs
+ensure-programs gpg openssl gpg-agent tr xargs
 
 # Verify that the required environment variables are set
 ensure-env mimipass_home mimipass_recipient
@@ -49,15 +49,16 @@ mimipass-get() {
     passwd_file=$mimipass_home/$passwd_name.enc
 
     if [ -f $passwd_file ]; then
-        gpg -r $mimipass_recipient -d $passwd_file
+        gpg --use-agent -r $mimipass_recipient -d $passwd_file
     else
-        echo -e "${txtred}Couldn't find [ ${passwd_name} ] in the passwd list" >&2
+        echo -e "${txtred}Couldn't find [ ${passwd_name} ] in the passwd list${clroff}" >&2
         return 1
     fi
 }
 
 mimipass-copy() {
     passwd_name=$1
+    ensure-programs xclip
 
     mimipass-get $passwd_name | xclip -i -selection clipboard \
         && echo -e "${txtgrn}Password ${txtred}[ $passwd_name ] ${txtgrn}sent to clipboard :)${clroff}" >&2
