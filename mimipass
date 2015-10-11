@@ -49,7 +49,7 @@ mimipass-get() {
     passwd_file=$MIMIPASS_HOME/$passwd_name.enc
 
     if [ -f $passwd_file ]; then
-        gpg --use-agent -r $MIMIPASS_RECIPIENT -d $passwd_file
+        gpg -q --no-tty --use-agent -r $MIMIPASS_RECIPIENT -d $passwd_file
     else
         red_echo "Couldn't find [ ${passwd_name} ] in the passwd list" >&2
         return 1
