@@ -19,11 +19,15 @@ use it.
 # Set up
 
 In order to use `Mimipass` from the command line, you can add a symlink to
-`/bin/`:
+`/bin/`. This is wrapped in the provided `link-mimipass` script:
 
 ```
-$ sudo ln -sf /path/to/mimipass /bin/mimipass
+$ ./link-mimipass
+# Done!
 ```
+
+The script will also add auto-completion to bash if `/etc/bash_completion.d`
+exists.
 
 With this, calling `mimipass` directly from the shell will work.
 

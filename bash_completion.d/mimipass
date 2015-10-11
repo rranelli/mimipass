@@ -1,0 +1,29 @@
+# Local variables:
+# mode: shell-script
+# sh-basic-offset: 4
+# indent-tabs-mode: nil
+# End:
+# ex: ts=4 sw=4 et filetype=sh
+
+_mimipass()
+{
+    local cur prev
+    COMPREPLY=()
+
+    cur=${COMP_WORDS[COMP_CWORD]}
+    prev=${COMP_WORDS[COMP_CWORD-1]}
+
+    commands="get set gen gen-set import export copy"
+
+    case $prev in
+        get|copy|set)
+            COMPREPLY=( $(compgen -W "$(mimipass list 2>/dev/null)" -- $cur) )
+            ;;
+        *)
+            COMPREPLY=( $(compgen -W "${commands}" -- $cur) )
+    esac
+
+    return 0
+}
+
+complete -F _mimipass mimipass
