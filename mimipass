@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+### TODO:
+# 1. Figure out how to stop gpg cache of the passphrase.
+# 2. Figure out how to set a timeout for gpg passphrase.
+# 3. Figure out how to transport the keyring around. (export && imports)
+# 4. Migrate `pass.org` to mimipass
+
+mimipass_home=$(cd $(dirname ${BASH_SOURCE[0]}) && pwd)
+mimipass_recipient=renanranelli@gmail.com
+
+# colors
+txtred='\e[0;31m' # Red
+txtgrn='\e[0;32m' # Green
+clroff='\e[0m' # Text Reset
+
+ensure() {
+    errors=""
+    verify=$1 && shift
+    for verifiable in "$@"; do
+        $verify $verifiable >/dev/null \
+            || errors+="${txtred}Mimipass requires \`$verify $verifiable\` to return true.\n"
+    done
+
+    [ -z "$errors" ] || { echo -e "${errors%\\n}" && exit 1 ;}
+}
+
+# higher order functions in shell! ;p
+ensure-env() { ensure "test -v" "$@" ;}
+ensure-programs() { ensure which "$@" ;}
+
+# Verify if dependencies are available
+ensure-programs gpg xclip
+
+# Verify that the required environment variables are set
+ensure-env mimipass_home mimipass_recipient
+
+mimipass-list() {
+    echo 'Mimipass available passwords:'
+    ls -1 $mimipass_home/*.enc \
+        | xargs -I {} -n1 basename {} .enc \
+        | xargs -I{} -n1 echo "* {}"
+}
+
+mimipass-get() {
+    passwd_name=$1
+    passwd_file=$mimipass_home/$passwd_name.enc
+
+    if [ -f $passwd_file ]; then
+n        gpg -r $mimipass_recipient -d $passwd_file \
+            | xclip -i -selection clipboard
+        echo -e "${txtgrn}Password ${txtred}[$passwd_name] ${txtgrn}sent to clipboard :)${clroff}"
+
+    else
+        echo -e "${txtred}Couldn't find \`${passwd_name}\` in the passwd list"
+    fi
+}
+
+mimipass-set() {
+    passwd_name=$1
+    passwd_file=$mimipass_home/$passwd_name.enc
+
+    echo -e "${txtgrn}Type the text. Press C-d when done.${clroff}"
+    gpg --yes -r $mimipass_recipient -o $passwd_file -e
+
+    echo -e "${txtgrn}Done!"
+}
+
+# invoke the program
+cmd=$1 && shift
+mimipass-$cmd $@
