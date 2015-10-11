@@ -51,3 +51,7 @@ fi
 export GPG_TTY=`tty`
 export GPG_AGENT_INFO
 ```
+
+# Usage
+
+# TODO: Write usage session
