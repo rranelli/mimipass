@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Required environment variables
-mimipass_home=$(cd $(dirname ${BASH_SOURCE[0]}) && pwd)
-mimipass_recipient=renanranelli@gmail.com
-
 # Text helper colors
 txtred='\e[0;31m' # Red
 txtgrn='\e[0;32m' # Green
@@ -24,34 +20,35 @@ ensure() {
     [ -z "$errors" ] || { echo -e "${errors%\\n}" && exit 1 ;}
 }
 
+green_echo() { echo -e "${txtgrn}$@${clroff}" ;}
+red_echo() { echo -e "${txtred}$@${clroff}" ;}
+
 # higher order functions in shell! ;p
 ensure-env() { ensure "test -v" "$@" ;}
 ensure-programs() { ensure which "$@" ;}
 
-# Verify if dependencies are available
+# Verify environment
 ensure-programs gpg openssl gpg-agent tr xargs
-
-# Verify that the required environment variables are set
-ensure-env mimipass_home mimipass_recipient
+ensure-env MIMIPASS_HOME MIMIPASS_RECIPIENT
 
 #
 ## Features
 #
 mimipass-list() {
     echo 'Mimipass available passwords:' >&2
-    ls -1 $mimipass_home/*.enc \
+    ls -1 $MIMIPASS_HOME/*.enc \
         | xargs -I {} -n1 basename {} .enc \
         | xargs -I{} -n1 echo "* {}"
 }
 
 mimipass-get() {
     passwd_name=$1
-    passwd_file=$mimipass_home/$passwd_name.enc
+    passwd_file=$MIMIPASS_HOME/$passwd_name.enc
 
     if [ -f $passwd_file ]; then
-        gpg --use-agent -r $mimipass_recipient -d $passwd_file
+        gpg --use-agent -r $MIMIPASS_RECIPIENT -d $passwd_file
     else
-        echo -e "${txtred}Couldn't find [ ${passwd_name} ] in the passwd list${clroff}" >&2
+        red_echo "Couldn't find [ ${passwd_name} ] in the passwd list" >&2
         return 1
     fi
 }
@@ -61,17 +58,17 @@ mimipass-copy() {
     ensure-programs xclip
 
     mimipass-get $passwd_name | xclip -i -selection clipboard \
-        && echo -e "${txtgrn}Password ${txtred}[ $passwd_name ] ${txtgrn}sent to clipboard :)${clroff}" >&2
+        && green_echo "Password [ $passwd_name ] sent to clipboard :)" >&2
 }
 
 mimipass-set() {
     passwd_name=$1
-    passwd_file=$mimipass_home/$passwd_name.enc
+    passwd_file=$MIMIPASS_HOME/$passwd_name.enc
 
-    echo -e "${txtgrn}Type the text. Press C-d when done.${clroff}" >&2
-    gpg --yes -r $mimipass_recipient -o $passwd_file -e
+    green_echo "Type the text. Press C-d when done." >&2
+    gpg --yes -r $MIMIPASS_RECIPIENT -o $passwd_file -e
 
-    echo -e "${txtgrn}Done!" >&2
+    green_echo "Done!" >&2
 }
 
 mimipass-gen() {
@@ -86,7 +83,13 @@ mimipass-gen-set() {
     passwd_name=$1
 
     mimipass-gen | mimipass-set $passwd_name 2>/dev/null
-    echo -e "${txtgrn}Done!"
+    green_echo "Done!"
+}
+
+mimipass-import() {
+    gpg --import $MIMIPASS_HOME/publickey.txt
+    gpg --import $MIMIPASS_HOME/privatekey.txt
+    green_echo "Done!"
 }
 
 # Invoke!
