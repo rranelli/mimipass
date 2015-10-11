@@ -32,10 +32,13 @@ ensure-programs gpg openssl gpg-agent tr xargs
 ensure-env MIMIPASS_HOME MIMIPASS_RECIPIENT
 
 #
-## Features
+## Password recovery
 #
 mimipass-list() {
-    echo 'Mimipass available passwords:' >&2
+    (ls $MIMIPASS_HOME/*.enc >/dev/null 2>&1) \
+        || { red_echo 'No passwords available'; return 1 ;}
+
+    green_echo 'Mimipass available passwords:' >&2
     ls -1 $MIMIPASS_HOME/*.enc \
         | xargs -I {} -n1 basename {} .enc \
         | xargs -I{} -n1 echo "* {}"
@@ -61,16 +64,23 @@ mimipass-copy() {
         && green_echo "Password [ $passwd_name ] sent to clipboard :)" >&2
 }
 
+#
+## Password set and generation
+#
 mimipass-set() {
     passwd_name=$1
     passwd_file=$MIMIPASS_HOME/$passwd_name.enc
 
-    green_echo "Type the text. Press C-d when done." >&2
-    gpg --yes -r $MIMIPASS_RECIPIENT -o $passwd_file -e
+    # if a second argument is passed to mimipass-set, use that as the password to encrypt
+    if [ -n $2 ]; then
+        gpg --yes -r $MIMIPASS_RECIPIENT -o $passwd_file -e <(echo "$2")
+    else
+        green_echo "Type the text. Press Return and then C-d when done." >&2
+        gpg --yes -r $MIMIPASS_RECIPIENT -o $passwd_file -e
+    fi
 
     green_echo "Done!" >&2
 }
-
 mimipass-gen() {
     size=${1:-64}
 
@@ -78,18 +88,28 @@ mimipass-gen() {
         | tr -d '\n' \
         | cut -c -$size
 }
-
 mimipass-gen-set() {
     passwd_name=$1
 
     mimipass-gen | mimipass-set $passwd_name 2>/dev/null
-    green_echo "Done!"
+    green_echo "Done!" >&2
 }
 
+#
+## Secret key import and exporting
+#
 mimipass-import() {
     gpg --import $MIMIPASS_HOME/publickey.txt
     gpg --import $MIMIPASS_HOME/privatekey.txt
-    green_echo "Done!"
+
+    green_echo "Done!" >&2
+}
+
+mimipass-export() {
+    gpg --export            -a -o $MIMIPASS_HOME/publickey.txt $MIMIPASS_RECIPIENT
+    gpg --export-secret-key -a -o $MIMIPASS_HOME/privatekey.txt $MIMIPASS_RECIPIENT
+
+    green_echo "Done!" >&2
 }
 
 # Invoke!

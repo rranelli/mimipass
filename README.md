@@ -18,9 +18,21 @@ use it.
 
 # Set up
 
-Make sure you have `gpg-agent` installed and configured at your machine.
+In order to use `Mimipass` from the command line, you can add a symlink to
+`/bin/`:
 
-Adding the following excerpt to your profile should suffice:
+```
+$ sudo ln -sf /path/to/mimipass /bin/mimipass
+```
+
+With this, calling `mimipass` directly from the shell will work.
+
+Make sure you have `gpg-agent` installed and configured at your machine. A good
+introduction to `gpg` is available
+[here](http://www.ianatkinson.net/computing/gnupg.htm)
+
+Adding the following excerpt to your profile should suffice to start gpg-agent
+when needed:
 
 ```sh
 # Invoke GnuPG-Agent the first time we login.
@@ -35,12 +47,3 @@ fi
 export GPG_TTY=`tty`
 export GPG_AGENT_INFO
 ```
-
-In order to use `Mimipass` from the command line, you can add a symlink to
-`/bin/`:
-
-```
-# ln -sf /path/to/mimipass /bin/mimipass
-```
-
-`
