@@ -72,12 +72,14 @@ mimipass-set() {
     passwd_file=$MIMIPASS_HOME/$passwd_name.enc
 
     # if a second argument is passed to mimipass-set, use that as the password to encrypt
-    if [ -n $2 ]; then
+    set +u
+    if [ -n "$2" ]; then
         gpg --yes -r $MIMIPASS_RECIPIENT -o $passwd_file -e <(echo "$2")
     else
         green_echo "Type the text. Press Return and then C-d when done." >&2
         gpg --yes -r $MIMIPASS_RECIPIENT -o $passwd_file -e
     fi
+    set -u
 
     green_echo "Done!" >&2
 }
