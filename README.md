@@ -41,6 +41,11 @@ With this, calling `mimipass` directly from the shell will work.
 Mimipass is just a simple frontend to `gpg-agent` optimized to deal with
 passwords. Every meaningful configuration must be done at the `gpg-agent` level.
 
+In order to use it, you must set the two following environment variables:
+`MIMIPASS_HOME` and `MIMIPASS_RECIPIENT` which correspond to the directory to
+put encrypted password files and the name of the recipient for the `gpg`'s
+public key to be used.
+
 Make sure you have `gpg-agent` installed and configured at your machine. A good
 introduction to `gpg` is available
 [here](http://www.ianatkinson.net/computing/gnupg.htm)
@@ -113,5 +118,11 @@ $ mimipass new-set test3 8 # and of course you can specify its size
 # => Done!
 $ mimipass get test3
 # => laENWYpt
+$ mimipass delete test3
+# => Are you sure [y/N]?
+# => y
+# => Done!
+$ mimipass get test3
+# => Couldn't find [ test3 ] in the passwd list
 $ logout # byebye
 ```

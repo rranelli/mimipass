@@ -76,6 +76,7 @@ mimipass-set() {
 
     green_echo "Done!" >&2
 }
+
 mimipass-new() {
     size=${1:-64}
 
@@ -89,6 +90,30 @@ mimipass-new-set() {
 
     mimipass-new $size | mimipass-set $passwd_name 2>/dev/null
     green_echo "Done!" >&2
+}
+
+mimipass-delete() {
+    mimipass-delete-rec() {
+        [ $# = 0 ] && return 0
+
+        passwd_name=$1
+        passwd_file=$MIMIPASS_HOME/$passwd_name.enc
+
+        [ ! -e $passwd_file ] \
+            && red_echo "Can't find password ${passwd_name}" \
+            && exit 1
+
+        rm $passwd_file
+
+        shift && mimipass-delete-rec $@
+    }
+
+    read -rp "Are you sure [y/N]? "
+    if [[ $REPLY =~ ^[Yy]$ ]]
+    then
+        mimipass-delete-rec $@
+        green_echo "Done!" >&2
+    fi
 }
 
 #
