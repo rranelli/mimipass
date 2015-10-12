@@ -85,8 +85,9 @@ mimipass-new() {
 }
 mimipass-new-set() {
     passwd_name=$1
+    size=${2:-}
 
-    mimipass-create | mimipass-set $passwd_name 2>/dev/null
+    mimipass-new $size | mimipass-set $passwd_name 2>/dev/null
     green_echo "Done!" >&2
 }
 

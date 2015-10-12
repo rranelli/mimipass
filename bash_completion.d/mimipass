@@ -13,7 +13,7 @@ _mimipass()
     cur=${COMP_WORDS[COMP_CWORD]}
     prev=${COMP_WORDS[COMP_CWORD-1]}
 
-    commands="get set copy new new-set import export"
+    commands="list get set copy new new-set import export"
 
     case $prev in
         get|copy|set)
