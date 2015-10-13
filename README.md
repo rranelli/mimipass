@@ -135,5 +135,3 @@ $ logout # byebye
 
 You can perform a regression test by executing the `test.sh` script. Executing
 `test.sh` is also a nice way to check if your system is working correctly.
-
-The passphrase for the testing key is test1234.

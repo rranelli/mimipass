@@ -1,7 +1,9 @@
 * Things to do/figure out
   - [X] Figure out how to stop gpg cache of the passphrase.
   - [X] Figure out how to set a timeout for gpg passphrase.
-  - [ ] Integrate with Emacs to load irc passwords
+  - [X] Integrate with Emacs to load irc passwords
   - [X] Figure out how to transport the keyring around. (export && imports)
   - [X] Migrate `pass.org` to Mimipass
   - [X] Write a installation script (allow Mimipass to update itself ?)
+  - [ ] Add a test suite
+  - [ ] Generate documentation http://rtomayko.github.io/shocco/

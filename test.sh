@@ -46,6 +46,8 @@ if [ "${1-}" = "remake-regression" ]; then
 else
     result_file=test/.sandbox/output.txt
 fi
+
+echo ' ~~ The passphrase for the testing key is test1234 ~~'
 ./test/input.sh >$result_file 2>&1
 
 if diff $result_file test/output.txt; then
