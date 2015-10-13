@@ -6,6 +6,9 @@ txtred='\e[0;31m' # Red
 txtgrn='\e[0;32m' # Green
 clroff='\e[0m'    # Color reset
 
+grn_echo() { echo -e "${txtgrn}$@${clroff}" ;}
+red_echo() { echo -e "${txtred}$@${clroff}" ;}
+
 #
 ## Utility functions
 #
@@ -17,18 +20,18 @@ ensure() {
             || errors+="${txtred}Mimipass requires \`$verify $verifiable\` to return true.\n${clroff}"
     done
 
-    [ -z "$errors" ] || { echo -e "${errors%\\n}" && exit 1 ;}
+    [ -z "$errors" ] || err "${errors%\\n}"
 }
 
-green_echo() { echo -e "${txtgrn}$@${clroff}" ;}
-red_echo() { echo -e "${txtred}$@${clroff}" ;}
+err()   { red_echo "$@" >&2 && return 1 ;}
+say()   { grn_echo "$@" >&2 ;}
 
 # higher order functions in shell! ;p
 ensure-env() { ensure "test -v" "$@" ;}
-ensure-programs() { ensure which "$@" ;}
+ensure-commands() { ensure "command -v" "$@" ;}
 
 # Verify environment
-ensure-programs gpg openssl gpg-agent tr xargs
+ensure-commands gpg openssl gpg-agent tr xargs awk
 ensure-env MIMIPASS_HOME MIMIPASS_RECIPIENT
 
 #
@@ -36,9 +39,9 @@ ensure-env MIMIPASS_HOME MIMIPASS_RECIPIENT
 #
 mimipass-list() {
     (ls $MIMIPASS_HOME/*.enc >/dev/null 2>&1) \
-        || { red_echo 'No passwords available'; return 1 ;}
+        || err 'No passwords available'
 
-    green_echo 'Mimipass available passwords:' >&2
+    say 'Mimipass available passwords:'
     ls -1 $MIMIPASS_HOME/*.enc \
         | xargs -I {} -n1 basename {} .enc \
         | xargs -I{} -n1 echo "* {}"
@@ -51,17 +54,16 @@ mimipass-get() {
     if [ -f $passwd_file ]; then
         gpg -q --no-tty --use-agent -r $MIMIPASS_RECIPIENT -d $passwd_file
     else
-        red_echo "Couldn't find [ ${passwd_name} ] in the passwd list" >&2
-        return 1
+        err "Couldn't find [ ${passwd_name} ] in the passwd list"
     fi
 }
 
 mimipass-copy() {
     passwd_name=$1
-    ensure-programs xclip
+    ensure-commands xclip
 
     mimipass-get $passwd_name | xclip -i -selection clipboard \
-        && green_echo "Password [ $passwd_name ] sent to clipboard :)" >&2
+        && say "Password [ $passwd_name ] sent to clipboard :)"
 }
 
 #
@@ -71,10 +73,10 @@ mimipass-set() {
     passwd_name=$1
     passwd_file=$MIMIPASS_HOME/$passwd_name.enc
 
-    green_echo "Type the text. Press Return and then C-d when done." >&2
+    say "Type the text. Press Return and then C-d when done."
     gpg --yes -r $MIMIPASS_RECIPIENT -o $passwd_file -e
 
-    green_echo "Done!" >&2
+    say "Done!"
 }
 
 mimipass-new() {
@@ -89,7 +91,7 @@ mimipass-new-set() {
     size=${2:-}
 
     mimipass-new $size | mimipass-set $passwd_name 2>/dev/null
-    green_echo "Done!" >&2
+    say "Done!"
 }
 
 mimipass-delete() {
@@ -100,8 +102,7 @@ mimipass-delete() {
         passwd_file=$MIMIPASS_HOME/$passwd_name.enc
 
         [ ! -e $passwd_file ] \
-            && red_echo "Can't find password ${passwd_name}" \
-            && exit 1
+            && err "Can't find password ${passwd_name}"
 
         rm $passwd_file
 
@@ -112,7 +113,7 @@ mimipass-delete() {
     if [[ $REPLY =~ ^[Yy]$ ]]
     then
         mimipass-delete-rec $@
-        green_echo "Done!" >&2
+        say "Done!"
     fi
 }
 
@@ -123,14 +124,31 @@ mimipass-import() {
     gpg --import $MIMIPASS_HOME/publickey.txt
     gpg --import $MIMIPASS_HOME/privatekey.txt
 
-    green_echo "Done!" >&2
+    mimipass-set-trust
+
+    say "Done!"
 }
 
 mimipass-export() {
     gpg --export            -a -o $MIMIPASS_HOME/publickey.txt $MIMIPASS_RECIPIENT
     gpg --export-secret-key -a -o $MIMIPASS_HOME/privatekey.txt $MIMIPASS_RECIPIENT
 
-    green_echo "Done!" >&2
+    say "Done!"
+}
+
+mimipass-set-trust() {
+    # see http://marc.info/?l=gnupg-users&m=128040167115023&w=2
+    gpg --fingerprint --with-colons --list-keys \
+        | awk -F: -v keyname="$MIMIPASS_RECIPIENT" -v trustlevel="6" '
+        $1=="pub" && $10 ~ keyname { fpr=1 }
+        $1=="fpr" && fpr { fpr=$10; exit }
+        END {
+            cmd="gpg --export-ownertrust"
+            while (cmd | getline) if ($1!=fpr) print
+            close(cmd)
+            print fpr ":" trustlevel ":"
+        }
+    ' | gpg --import-ownertrust
 }
 
 # Invoke!

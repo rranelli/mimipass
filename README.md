@@ -67,8 +67,10 @@ export GPG_TTY=`tty`
 export GPG_AGENT_INFO
 ```
 
-If you're using the `gnome-keyring-daemon` as your `gpg-agent`, (as most gnome
-based systems do), you can do this with the following commands:
+If you have the `gnome-keyring-daemon` in your system, it will high-jack the
+`gpg-agent`. See [this link](http://wiki.gnupg.org/GnomeKeyring) for more info.
+If you're under this situation, you can configure the `gpg-cache` with the
+following commands:
 
 ```sh
 $ gsettings set org.gnome.crypto.cache gpg-cache-method 'timeout'
@@ -126,3 +128,12 @@ $ mimipass get test3
 # => Couldn't find [ test3 ] in the passwd list
 $ logout # byebye
 ```
+
+# Development
+
+## Testing
+
+You can perform a regression test by executing the `test.sh` script. Executing
+`test.sh` is also a nice way to check if your system is working correctly.
+
+The passphrase for the testing key is test1234.
