@@ -13,7 +13,7 @@ gpg: setting ownertrust to 6
 -- evaluating: mimipass get test || true
 [0;31mCouldn't find [ test ] in the passwd list[0m
 -- evaluating: echo inicial1234 | mimipass set test
-[0;32mType the text. Press Return and then C-d when done.[0m
+[0;32mType the text. Press C-d when done.[0m
 gpg: checking the trustdb
 gpg: 3 marginal(s) needed, 1 complete(s) needed, PGP trust model
 gpg: depth: 0  valid:   2  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 2u

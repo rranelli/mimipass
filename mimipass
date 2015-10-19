@@ -73,7 +73,7 @@ mimipass-set() {
     passwd_name=$1
     passwd_file=$MIMIPASS_HOME/$passwd_name.enc
 
-    say "Type the text. Press Return and then C-d when done."
+    say "Type the text. Press C-d when done."
     gpg --yes -r $MIMIPASS_RECIPIENT -o $passwd_file -e
 
     say "Done!"

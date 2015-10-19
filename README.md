@@ -105,7 +105,7 @@ $ mimipass new 8          # you can also specify the size of the password
 $ mimipass get test       # recover a previously set password
 # => Couldn't find [ test ] in the passwd list
 $ mimipass set test       # ops. We forgot to set it. let's do it now
-# => Type the text. Press Return and then C-d when done.
+# => Type the text. Press C-d when done.
 # => 1234
 # => Done!
 $ mimipass get test       # Voilá !
