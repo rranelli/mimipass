@@ -38,18 +38,18 @@ ensure-env MIMIPASS_HOME MIMIPASS_RECIPIENT
 ## Password recovery
 #
 mimipass-list() {
-    (ls $MIMIPASS_HOME/*.enc >/dev/null 2>&1) \
+    (ls $MIMIPASS_HOME/*.gpg >/dev/null 2>&1) \
         || err 'No passwords available'
 
     say 'Mimipass available passwords:'
-    ls -1 $MIMIPASS_HOME/*.enc \
-        | xargs -I {} -n1 basename {} .enc \
+    ls -1 $MIMIPASS_HOME/*.gpg \
+        | xargs -I {} -n1 basename {} .gpg \
         | xargs -I{} -n1 echo "* {}"
 }
 
 mimipass-get() {
     passwd_name=$1
-    passwd_file=$MIMIPASS_HOME/$passwd_name.enc
+    passwd_file=$MIMIPASS_HOME/$passwd_name.gpg
 
     if [ -f $passwd_file ]; then
         gpg -q --no-tty --use-agent -r $MIMIPASS_RECIPIENT -d $passwd_file
@@ -71,10 +71,10 @@ mimipass-copy() {
 #
 mimipass-set() {
     passwd_name=$1
-    passwd_file=$MIMIPASS_HOME/$passwd_name.enc
+    passwd_file=$MIMIPASS_HOME/$passwd_name.gpg
 
     say "Type the text. Press C-d when done."
-    gpg --yes -r -a $MIMIPASS_RECIPIENT -o $passwd_file -e
+    gpg --yes -a -r $MIMIPASS_RECIPIENT -o $passwd_file -e
 
     say "Done!"
 }
@@ -99,7 +99,7 @@ mimipass-delete() {
         [ $# = 0 ] && return 0
 
         passwd_name=$1
-        passwd_file=$MIMIPASS_HOME/$passwd_name.enc
+        passwd_file=$MIMIPASS_HOME/$passwd_name.gpg
 
         [ ! -e $passwd_file ] \
             && err "Can't find password ${passwd_name}"
