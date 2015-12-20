@@ -40,11 +40,11 @@ ensure-env MIMIPASS_HOME MIMIPASS_RECIPIENT
 mimipass-list() {
     local query=${1:-}
 
-    [ $(find $MIMIPASS_HOME -name "${query}*.gpg" | wc -l) -gt 0 ] \
+    [ $(find $MIMIPASS_HOME -name "*${query}*.gpg" | wc -l) -gt 0 ] \
         || err 'No passwords available'
 
     say 'Mimipass available passwords:'
-    find $MIMIPASS_HOME -name "${query}*.gpg" \
+    find $MIMIPASS_HOME -name "*${query}*.gpg" \
         | xargs -I{} -n1 basename {} .gpg \
         | xargs -I{} -n1 echo "* {}" \
         | sort
