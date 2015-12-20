@@ -16,7 +16,7 @@ _mimipass()
     commands="list get set copy new new64 new-set new-set-copy import export delete"
 
     case $prev in
-        get|copy|set|new-set|delete|new-set-copy)
+        list|get|copy|set|new-set|delete|new-set-copy)
             COMPREPLY=( $(compgen -W "$(mimipass list 2>/dev/null)" -- $cur) )
             ;;
         *)

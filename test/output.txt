@@ -28,15 +28,15 @@ inicial1234
 [0;32mDone![0m
 -- evaluating: mimipass list
 [0;32mMimipass available passwords:[0m
+* test
 * test2
 * test3
-* test
 -- evaluating: yes | mimipass delete test3 && [ ! -f test/test.enc ]
 [0;32mDone![0m
 -- evaluating: mimipass list
 [0;32mMimipass available passwords:[0m
-* test2
 * test
+* test2
 -- evaluating: mimipass get test3 || true
 [0;31mCouldn't find [ test3 ] in the passwd list[0m
 -- evaluating: yes | mimipass delete test test2 && [ ! -f test/test.enc ]

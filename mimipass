@@ -13,8 +13,8 @@ red_echo() { echo -e "${txtred}$@${clroff}" ;}
 ## Utility functions
 #
 ensure() {
-    errors=""
-    verify=$1 && shift
+    local errors=""
+    local verify=$1 && shift
     for verifiable in "$@"; do
         $verify $verifiable >/dev/null \
             || errors+="${txtred}Mimipass requires \`$verify $verifiable\` to return true.\n${clroff}"
@@ -31,25 +31,28 @@ ensure-env() { ensure "test -v" "$@" ;}
 ensure-commands() { ensure "command -v" "$@" ;}
 
 # Verify environment
-ensure-commands gpg openssl gpg-agent tr xargs awk
+ensure-commands gpg openssl gpg-agent tr xargs awk find
 ensure-env MIMIPASS_HOME MIMIPASS_RECIPIENT
 
 #
 ## Password recovery
 #
 mimipass-list() {
-    (ls $MIMIPASS_HOME/*.gpg >/dev/null 2>&1) \
+    local query=${1:-}
+
+    [ $(find $MIMIPASS_HOME -name "${query}*.gpg" | wc -l) -gt 0 ] \
         || err 'No passwords available'
 
     say 'Mimipass available passwords:'
-    ls -1 $MIMIPASS_HOME/*.gpg \
-        | xargs -I {} -n1 basename {} .gpg \
-        | xargs -I{} -n1 echo "* {}"
+    find $MIMIPASS_HOME -name "${query}*.gpg" \
+        | xargs -I{} -n1 basename {} .gpg \
+        | xargs -I{} -n1 echo "* {}" \
+        | sort
 }
 
 mimipass-get() {
-    passwd_name=$1
-    passwd_file=$MIMIPASS_HOME/$passwd_name.gpg
+    local passwd_name=$1
+    local passwd_file=$MIMIPASS_HOME/$passwd_name.gpg
 
     if [ -f $passwd_file ]; then
         gpg -q --no-tty --use-agent -r $MIMIPASS_RECIPIENT -d $passwd_file
@@ -59,7 +62,7 @@ mimipass-get() {
 }
 
 mimipass-copy() {
-    passwd_name=$1
+    local passwd_name=$1
     ensure-commands xclip
 
     mimipass-get $passwd_name | xclip -i -selection clipboard \
@@ -70,8 +73,8 @@ mimipass-copy() {
 ## Password set and generation
 #
 mimipass-set() {
-    passwd_name=$1
-    passwd_file=$MIMIPASS_HOME/$passwd_name.gpg
+    local passwd_name=$1
+    local passwd_file=$MIMIPASS_HOME/$passwd_name.gpg
 
     say "Type the text. Press C-d when done."
     gpg --yes -a -r $MIMIPASS_RECIPIENT -o $passwd_file -e
@@ -80,7 +83,7 @@ mimipass-set() {
 }
 
 mimipass-new() {
-    size=${1:-64}
+    local size=${1:-64}
 
     openssl rand -base64 300 \
         | tr -d '\n' \
@@ -88,15 +91,15 @@ mimipass-new() {
 }
 mimipass-new64() { mimipass-new 300 | tr -dc 'a-zA-Z0-9' | cut -c -${1:-64} ;}
 mimipass-new-set() {
-    passwd_name=$1
-    size=${2:-}
+    local passwd_name=$1
+    local size=${2:-}
 
     mimipass-new $size | mimipass-set $passwd_name 2>/dev/null
     say "Done!"
 }
 mimipass-new-set-copy() {
-    passwd_name=$1
-    size=${2:-}
+    local passwd_name=$1
+    local size=${2:-}
 
     mimipass-new-set $passwd_name $size 2>/dev/null
     mimipass copy $passwd_name 2>/dev/null
@@ -107,8 +110,8 @@ mimipass-delete() {
     mimipass-delete-rec() {
         [ $# = 0 ] && return 0
 
-        passwd_name=$1
-        passwd_file=$MIMIPASS_HOME/$passwd_name.gpg
+        local passwd_name=$1
+        local passwd_file=$MIMIPASS_HOME/$passwd_name.gpg
 
         [ ! -e $passwd_file ] \
             && err "Can't find password ${passwd_name}"
@@ -119,7 +122,7 @@ mimipass-delete() {
     }
 
     local confirmed=false
-    if [[ $1 = '-y'  || $1 = '--yes' ]]; then
+    if [ "$1" = '-y' ] || [ "$1" = '--yes' ]; then
         confirmed=true
         REPLY=y
         shift
