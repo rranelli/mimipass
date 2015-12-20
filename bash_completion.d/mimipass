@@ -13,10 +13,10 @@ _mimipass()
     cur=${COMP_WORDS[COMP_CWORD]}
     prev=${COMP_WORDS[COMP_CWORD-1]}
 
-    commands="list get set copy new new-set new-set-copy import export delete"
+    commands="list get set copy new new64 new-set new-set-copy import export delete"
 
     case $prev in
-        get|copy|set|new-set|delete)
+        get|copy|set|new-set|delete|new-set-copy)
             COMPREPLY=( $(compgen -W "$(mimipass list 2>/dev/null)" -- $cur) )
             ;;
         *)

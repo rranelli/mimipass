@@ -82,10 +82,11 @@ mimipass-set() {
 mimipass-new() {
     size=${1:-64}
 
-    openssl rand -base64 128 \
+    openssl rand -base64 300 \
         | tr -d '\n' \
         | cut -c -$size
 }
+mimipass-new64() { mimipass-new 300 | tr -dc 'a-zA-Z0-9' | cut -c -${1:-64} ;}
 mimipass-new-set() {
     passwd_name=$1
     size=${2:-}
