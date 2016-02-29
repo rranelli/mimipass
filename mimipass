@@ -40,11 +40,11 @@ ensure-env MIMIPASS_HOME MIMIPASS_RECIPIENT
 mimipass-list() {
     local query=${1:-}
 
-    [ $(find $MIMIPASS_HOME -name "*${query}*.gpg" | wc -l) -gt 0 ] \
+    [ $(find "${MIMIPASS_HOME}" -name "*${query}*.gpg" | wc -l) -gt 0 ] \
         || err 'No passwords available'
 
     say 'Mimipass available passwords:'
-    find $MIMIPASS_HOME -name "*${query}*.gpg" \
+    find "${MIMIPASS_HOME}" -name "*${query}*.gpg" \
         | xargs -I{} -n1 basename {} .gpg \
         | xargs -I{} -n1 echo "* {}" \
         | sort
@@ -52,10 +52,10 @@ mimipass-list() {
 
 mimipass-get() {
     local passwd_name=$1
-    local passwd_file=$MIMIPASS_HOME/$passwd_name.gpg
+    local passwd_file="${MIMIPASS_HOME}/${passwd_name}.gpg"
 
-    if [ -f $passwd_file ]; then
-        gpg -q --no-tty --use-agent -r $MIMIPASS_RECIPIENT -d $passwd_file
+    if [ -f "${passwd_file}" ]; then
+        gpg -q --no-tty --use-agent -r $MIMIPASS_RECIPIENT -d "${passwd_file}"
     else
         err "Couldn't find [ ${passwd_name} ] in the passwd list"
     fi
@@ -74,10 +74,10 @@ mimipass-copy() {
 #
 mimipass-set() {
     local passwd_name=$1
-    local passwd_file=$MIMIPASS_HOME/$passwd_name.gpg
+    local passwd_file="${MIMIPASS_HOME}/${passwd_name}.gpg"
 
     say "Type the text. Press C-d when done."
-    gpg --yes -a -r $MIMIPASS_RECIPIENT -o $passwd_file -e
+    gpg --yes -a -r $MIMIPASS_RECIPIENT -o "${passwd_file}" -e
 
     say "Done!"
 }
@@ -111,12 +111,12 @@ mimipass-delete() {
         [ $# = 0 ] && return 0
 
         local passwd_name=$1
-        local passwd_file=$MIMIPASS_HOME/$passwd_name.gpg
+        local passwd_file="${MIMIPASS_HOME}/${passwd_name}.gpg"
 
-        [ ! -e $passwd_file ] \
+        [ ! -e "$passwd_file" ] \
             && err "Can't find password ${passwd_name}"
 
-        rm $passwd_file
+        rm "${passwd_file}"
 
         shift && mimipass-delete-rec $@
     }
@@ -139,8 +139,8 @@ mimipass-delete() {
 ## Secret key import and exporting
 #
 mimipass-import() {
-    gpg --import $MIMIPASS_HOME/publickey.txt
-    gpg --import $MIMIPASS_HOME/privatekey.txt
+    gpg --import "${MIMIPASS_HOME}/publickey.txt"
+    gpg --import "${MIMIPASS_HOME}/privatekey.txt"
 
     mimipass-set-trust
 
@@ -148,8 +148,8 @@ mimipass-import() {
 }
 
 mimipass-export() {
-    gpg --export            -a -o $MIMIPASS_HOME/publickey.txt $MIMIPASS_RECIPIENT
-    gpg --export-secret-key -a -o $MIMIPASS_HOME/privatekey.txt $MIMIPASS_RECIPIENT
+    gpg --export            -a -o "${MIMIPASS_HOME}/publickey.txt" $MIMIPASS_RECIPIENT
+    gpg --export-secret-key -a -o "${MIMIPASS_HOME}/privatekey.txt" $MIMIPASS_RECIPIENT
 
     say "Done!"
 }
