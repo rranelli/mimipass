@@ -13,7 +13,7 @@ gpg: setting ownertrust to 6
 -- evaluating: mimipass get test || true
 [0;31mCouldn't find [ test ] in the passwd list[0m
 -- evaluating: echo inicial1234 | mimipass set test
-[0;32mType the text. Press C-d when done.[0m
+[0;32mType the text. Press C-d twice when done.[0m
 gpg: checking the trustdb
 gpg: 3 marginal(s) needed, 1 complete(s) needed, PGP trust model
 gpg: depth: 0  valid:   2  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 2u
@@ -47,5 +47,19 @@ inicial1234
 [0;31mCouldn't find [ test2 ] in the passwd list[0m
 -- evaluating: mimipass list || true
 [0;31mNo passwords available[0m
+-- evaluating: echo inicial4321 | mimipass set with/nested/scopes
+[0;32mType the text. Press C-d twice when done.[0m
+[0;32mDone![0m
+-- evaluating: mimipass get with/nested/scopes
+inicial4321
+-- evaluating: echo passwordinference | mimipass set account/password
+[0;32mType the text. Press C-d twice when done.[0m
+[0;32mDone![0m
+-- evaluating: mimipass get account/password
+passwordinference
+-- evaluating: mimipass get account
+passwordinference
+-- evaluating: mimipass get account/
+passwordinference
 -- evaluating: rm -rf test/.sandbox/*key.txt && mimipass export
 [0;32mDone![0m

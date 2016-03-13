@@ -20,6 +20,13 @@ with_echo "mimipass get test || true"
 with_echo "mimipass get test2 || true"
 with_echo "mimipass list || true"
 
-with_echo "rm -rf test/.sandbox/*key.txt && mimipass export"
+with_echo "echo inicial4321 | mimipass set with/nested/scopes"
+with_echo "mimipass get with/nested/scopes"
 
+with_echo "echo passwordinference | mimipass set account/password"
+with_echo "mimipass get account/password"
+with_echo "mimipass get account"
+with_echo "mimipass get account/"
+
+with_echo "rm -rf test/.sandbox/*key.txt && mimipass export"
 exit 0

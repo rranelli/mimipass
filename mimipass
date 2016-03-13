@@ -13,14 +13,14 @@ red_echo() { echo -e "${txtred}$@${clroff}" ;}
 ## Utility functions
 #
 ensure() {
-    local errors=""
-    local verify=$1 && shift
-    for verifiable in "$@"; do
-        $verify $verifiable >/dev/null \
-            || errors+="${txtred}Mimipass requires \`$verify $verifiable\` to return true.\n${clroff}"
-    done
+  local errors=""
+  local verify=$1 && shift
+  for verifiable in "$@"; do
+    $verify $verifiable >/dev/null \
+        || errors+="${txtred}Mimipass requires \`$verify $verifiable\` to return true.\n${clroff}"
+  done
 
-    [ -z "$errors" ] || err "${errors%\\n}"
+  [ -z "$errors" ] || err "${errors%\\n}"
 }
 
 err()   { red_echo "$@" >&2 && return 1 ;}
@@ -38,126 +38,154 @@ ensure-env MIMIPASS_HOME MIMIPASS_RECIPIENT
 ## Password recovery
 #
 mimipass-list() {
-    local query=${1:-}
+  local query="*${1:-}*.gpg"
 
-    [ $(find "${MIMIPASS_HOME}" -name "*${query}*.gpg" | wc -l) -gt 0 ] \
-        || err 'No passwords available'
+  [ $(find "${MIMIPASS_HOME}" -path "$query" | wc -l) -gt 0 ] \
+      || err 'No passwords available'
 
-    say 'Mimipass available passwords:'
-    find "${MIMIPASS_HOME}" -name "*${query}*.gpg" \
-        | xargs -I{} -n1 basename {} .gpg \
-        | xargs -I{} -n1 echo "* {}" \
-        | sort
+  say 'Mimipass available passwords:'
+  find "${MIMIPASS_HOME}" -path "$query" \
+      | xargs -I{} -n1 bash -c "echo {} | cut -c $(expr ${#MIMIPASS_HOME} + 2)-" \
+      | xargs -I{} -n1 bash -c "echo {} | rev | cut -d '.' -f 2- | rev" \
+      | xargs -I{} -n1 echo "* {}" \
+      | sort
 }
 
 mimipass-get() {
-    local passwd_name=$1
-    local passwd_file="${MIMIPASS_HOME}/${passwd_name}.gpg"
+  local passwd_name=$1
+  local passwd_file="${MIMIPASS_HOME}/${passwd_name}.gpg"
 
-    if [ -f "${passwd_file}" ]; then
-        gpg -q --no-tty --use-agent -r $MIMIPASS_RECIPIENT -d "${passwd_file}"
+  if [ -f "${passwd_file}" ]; then
+      gpg -q --no-tty --use-agent -r $MIMIPASS_RECIPIENT -d "${passwd_file}"
+  else
+    if [ -f "${MIMIPASS_HOME}/${passwd_name}/password.gpg" ]; then
+      gpg -q --no-tty --use-agent -r $MIMIPASS_RECIPIENT -d "${MIMIPASS_HOME}/${passwd_name}/password.gpg"
     else
-        err "Couldn't find [ ${passwd_name} ] in the passwd list"
+      err "Couldn't find [ ${passwd_name} ] in the passwd list"
     fi
+  fi
 }
 
 mimipass-copy() {
-    local passwd_name=$1
-    ensure-commands xclip
+  local passwd_name=$1
+  ensure-commands xclip
 
-    mimipass-get $passwd_name | xclip -i -selection clipboard \
-        && say "Password [ $passwd_name ] sent to clipboard :)"
+  mimipass-get $passwd_name | xclip -i -selection clipboard \
+      && say "Password [ $passwd_name ] sent to clipboard :)"
 }
 
 #
 ## Password set and generation
 #
 mimipass-set() {
-    local passwd_name=$1
-    local passwd_file="${MIMIPASS_HOME}/${passwd_name}.gpg"
+  local passwd_name=$1
+  local passwd_file="${MIMIPASS_HOME}/${passwd_name}.gpg"
 
-    say "Type the text. Press C-d when done."
-    gpg --yes -a -r $MIMIPASS_RECIPIENT -o "${passwd_file}" -e
+  say "Type the text. Press C-d twice when done."
+  mkdir -p "$(dirname "$passwd_file")"
+  gpg --yes -a -r $MIMIPASS_RECIPIENT -o "${passwd_file}" -e
 
-    say "Done!"
+  say "Done!"
 }
 
 mimipass-new() {
-    local size=${1:-64}
+  local size=${1:-64}
 
-    openssl rand -base64 300 \
-        | tr -d '\n' \
-        | cut -c -$size
+  openssl rand -base64 300 \
+      | tr -d '\n' \
+      | cut -c -$size
 }
 mimipass-new64() { mimipass-new 300 | tr -dc 'a-zA-Z0-9' | cut -c -${1:-64} ;}
 mimipass-new-set() {
-    local passwd_name=$1
-    local size=${2:-}
+  local passwd_name=$1
+  local size=${2:-}
 
-    mimipass-new $size | mimipass-set $passwd_name 2>/dev/null
-    say "Done!"
+  mimipass-new $size | mimipass-set $passwd_name 2>/dev/null
+  say "Done!"
 }
 mimipass-new-set-copy() {
-    local passwd_name=$1
-    local size=${2:-}
+  local passwd_name=$1
+  local size=${2:-}
 
-    mimipass-new-set $passwd_name $size 2>/dev/null
-    mimipass copy $passwd_name 2>/dev/null
-    say "Done!"
+  mimipass-new-set $passwd_name $size 2>/dev/null
+  mimipass copy $passwd_name 2>/dev/null
+  say "Done!"
+}
+mimipass-new-account() {
+  local context=${1:-}
+  local username=${2:-}
+
+  # check if the context is a valid one
+  if [[ "${context:0:1}" =~ ^[./] ]]; then
+      err "You must specify a valid context."
+  fi
+
+  if [ -n "$username" ]; then
+      echo "$username" \
+          | mimipass set "$context/username" 2>/dev/null
+  else
+    say "Whats your username? Press C-d twice when done."
+    mimipass set "$context/username" 2>/dev/null
+  fi
+
+  mimipass new-set-copy "$context/password" 2>/dev/null
+
+  say "created $context/password && $context/username"
+  say "Done!"
 }
 
 mimipass-delete() {
-    mimipass-delete-rec() {
-        [ $# = 0 ] && return 0
+  mimipass-delete-rec() {
+    [ $# = 0 ] && return 0
 
-        local passwd_name=$1
-        local passwd_file="${MIMIPASS_HOME}/${passwd_name}.gpg"
+    local passwd_name=$1
+    local passwd_file="${MIMIPASS_HOME}/${passwd_name}.gpg"
 
-        [ ! -e "$passwd_file" ] \
-            && err "Can't find password ${passwd_name}"
+    [ ! -e "$passwd_file" ] \
+        && err "Can't find password ${passwd_name}"
 
-        rm "${passwd_file}"
+    rm "${passwd_file}"
 
-        shift && mimipass-delete-rec $@
-    }
+    shift && mimipass-delete-rec $@
+  }
 
-    local confirmed=false
-    if [ "$1" = '-y' ] || [ "$1" = '--yes' ]; then
-        confirmed=true
-        REPLY=y
-        shift
-    fi
+  local confirmed=false
+  if [ "$1" = '-y' ] || [ "$1" = '--yes' ]; then
+      confirmed=true
+      REPLY=y
+      shift
+  fi
 
-    $confirmed || read -rp "Are you sure [y/N]? "
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        mimipass-delete-rec $@
-        say "Done!"
-    fi
+  $confirmed || read -rp "Are you sure [y/N]? "
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+      mimipass-delete-rec $@
+      say "Done!"
+  fi
 }
 
 #
 ## Secret key import and exporting
 #
 mimipass-import() {
-    gpg --import "${MIMIPASS_HOME}/publickey.txt"
-    gpg --import "${MIMIPASS_HOME}/privatekey.txt"
+  gpg --import "${MIMIPASS_HOME}/publickey.txt"
+  gpg --import "${MIMIPASS_HOME}/privatekey.txt"
 
-    mimipass-set-trust
+  mimipass-set-trust
 
-    say "Done!"
+  say "Done!"
 }
 
 mimipass-export() {
-    gpg --export            -a -o "${MIMIPASS_HOME}/publickey.txt" $MIMIPASS_RECIPIENT
-    gpg --export-secret-key -a -o "${MIMIPASS_HOME}/privatekey.txt" $MIMIPASS_RECIPIENT
+  gpg --export            -a -o "${MIMIPASS_HOME}/publickey.txt" $MIMIPASS_RECIPIENT
+  gpg --export-secret-key -a -o "${MIMIPASS_HOME}/privatekey.txt" $MIMIPASS_RECIPIENT
 
-    say "Done!"
+  say "Done!"
 }
 
 mimipass-set-trust() {
-    # see http://marc.info/?l=gnupg-users&m=128040167115023&w=2
-    gpg --fingerprint --with-colons --list-keys \
-        | awk -F: -v keyname="$MIMIPASS_RECIPIENT" -v trustlevel="6" '
+  # see http://marc.info/?l=gnupg-users&m=128040167115023&w=2
+  gpg --fingerprint --with-colons --list-keys \
+      | awk -F: -v keyname="$MIMIPASS_RECIPIENT" -v trustlevel="6" '
         $1=="pub" && $10 ~ keyname { fpr=1 }
         $1=="fpr" && fpr { fpr=$10; exit }
         END {
