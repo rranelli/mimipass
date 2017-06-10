@@ -23,8 +23,8 @@ ensure() {
   [ -z "$errors" ] || err "${errors%\\n}"
 }
 
-err()   { red_echo "$@" >&2 && return 1 ;}
-say()   { grn_echo "$@" >&2 ;}
+err() { red_echo "$@" >&2 && return 1 ;}
+say() { grn_echo "$@" >&2 ;}
 
 # higher order functions in shell! ;p
 ensure-env() { ensure "test -v" "$@" ;}
@@ -51,41 +51,62 @@ mimipass-list() {
       | sort
 }
 
-mimipass-get() {
+--get-passwd-file() {
   local passwd_name=$1
   local passwd_file="${MIMIPASS_HOME}/${passwd_name}.gpg"
+  local passwd_default_file="${MIMIPASS_HOME}/${passwd_name}/password.gpg"
 
-  if [ -f "${passwd_file}" ]; then
+  ([ -f "${passwd_file}" ] && echo "${passwd_file}") || \
+          ([ -f "${passwd_default_file}" ] && echo "${passwd_default_file}")
+}
+
+mimipass-get() {
+  local passwd_name=$1
+  local passwd_file=$(--get-passwd-file "${passwd_name}")
+  if [ -n "${passwd_file}" ]; then
       gpg -q --no-tty --use-agent -r $MIMIPASS_RECIPIENT -d "${passwd_file}"
   else
-    if [ -f "${MIMIPASS_HOME}/${passwd_name}/password.gpg" ]; then
-      gpg -q --no-tty --use-agent -r $MIMIPASS_RECIPIENT -d "${MIMIPASS_HOME}/${passwd_name}/password.gpg"
-    else
       err "Couldn't find [ ${passwd_name} ] in the passwd list"
-    fi
   fi
 }
 
 mimipass-copy() {
-  local passwd_name=$1
+  local passwd_name="$1"
   ensure-commands xclip
 
-  mimipass-get $passwd_name | xclip -i -selection clipboard \
+  mimipass-get "$passwd_name" | xclip -i -selection clipboard \
       && say "Password [ $passwd_name ] sent to clipboard :)"
 }
 
 #
 ## Password set and generation
 #
+--gpg-write() {
+  local passwd_file=$1
+  mkdir -p "$(dirname "$passwd_file")"
+  gpg --yes -a -r $MIMIPASS_RECIPIENT -o "${passwd_file}" -e;
+}
+
 mimipass-set() {
   local passwd_name=$1
   local passwd_file="${MIMIPASS_HOME}/${passwd_name}.gpg"
 
   say "Type the text. Press C-d twice when done."
-  mkdir -p "$(dirname "$passwd_file")"
-  gpg --yes -a -r $MIMIPASS_RECIPIENT -o "${passwd_file}" -e
+  cat | --gpg-write "${passwd_file}"
 
   say "Done!"
+}
+
+mimipass-edit() {
+  local passwd_name=$1
+  local existing_passwd_file=$(--get-passwd-file "${passwd_name}")
+  local new_passwd_file="${MIMIPASS_HOME}/${passwd_name}.gpg"
+  if [ -n "${existing_passwd_file}" ]; then
+      "${EDITOR}" "${existing_passwd_file}"
+  else
+    echo | --gpg-write "${new_passwd_file}"
+    "${EDITOR}" "${new_passwd_file}"
+  fi
 }
 
 mimipass-new() {
@@ -139,10 +160,10 @@ mimipass-delete() {
     [ $# = 0 ] && return 0
 
     local passwd_name=$1
-    local passwd_file="${MIMIPASS_HOME}/${passwd_name}.gpg"
+    local passwd_file=$(--get-passwd-file "${passwd_name}")
 
-    [ ! -e "$passwd_file" ] \
-        && err "Can't find password ${passwd_name}"
+    [ -n "$passwd_file" ] || \
+        err "Can't find password ${passwd_name}"
 
     rm "${passwd_file}"
 

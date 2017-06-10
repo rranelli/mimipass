@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 this_dir=$(cd $(dirname ${BASH_SOURCE[0]}) && pwd)
-sudo ln -sf $this_dir/mimipass /bin/mimipass
+sudo ln -sf $this_dir/mimipass /usr/local/bin/mimipass
 
 if [ -e /etc/bash_completion.d ]; then
     sudo ln -sf $this_dir/bash_completion.d/mimipass /etc/bash_completion.d/mimipass

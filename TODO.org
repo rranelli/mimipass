@@ -5,5 +5,5 @@
   - [X] Figure out how to transport the keyring around. (export && imports)
   - [X] Migrate `pass.org` to Mimipass
   - [X] Write a installation script (allow Mimipass to update itself ?)
-  - [ ] Add a test suite
+  - [X] Add a test suite
   - [ ] Generate documentation http://rtomayko.github.io/shocco/
