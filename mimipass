@@ -25,6 +25,7 @@ ensure() {
 
 err() { red_echo "$@" >&2 && return 1 ;}
 say() { grn_echo "$@" >&2 ;}
+trim-newline() { tail -n1 | xargs echo -n ;}
 
 # higher order functions in shell! ;p
 ensure-env() { ensure "test -v" "$@" ;}
@@ -39,7 +40,7 @@ ensure-env MIMIPASS_HOME MIMIPASS_RECIPIENT
 #
 mimipass-list() {
   local query="*${1:-}*.gpg"
-  local parallelism=4
+  local parallelism=${PARALLELISM:-8}
 
   [ $(find "${MIMIPASS_HOME}" -path "$query" | wc -l) -gt 0 ] \
       || err 'No passwords available'
@@ -75,7 +76,7 @@ mimipass-copy() {
   local passwd_name="$1"
   ensure-commands xclip
 
-  mimipass-get "$passwd_name" | xclip -i -selection clipboard \
+  mimipass-get "$passwd_name" | trim-newline | xclip -i -selection clipboard \
       && say "Password [ $passwd_name ] sent to clipboard :)"
 }
 
