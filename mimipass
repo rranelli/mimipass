@@ -25,7 +25,7 @@ ensure() {
 
 err() { red_echo "$@" >&2 && return 1 ;}
 say() { grn_echo "$@" >&2 ;}
-trim-newline() { tail -n1 | xargs echo -n ;}
+trim-newline() { head -n1 | xargs echo -n ;}
 
 # higher order functions in shell! ;p
 ensure-env() { ensure "test -v" "$@" ;}
