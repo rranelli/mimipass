@@ -40,16 +40,15 @@ ensure-env MIMIPASS_HOME MIMIPASS_RECIPIENT
 #
 mimipass-list() {
   local query="*${1:-}*.gpg"
-  local parallelism=${PARALLELISM:-8}
 
   [ $(find "${MIMIPASS_HOME}" -path "$query" | wc -l) -gt 0 ] \
       || err 'No passwords available'
 
   say 'Mimipass available passwords:'
   find "${MIMIPASS_HOME}" -path "$query" \
-      | xargs -I{} -P "${parallelism}" -n1 bash -c "echo {} | cut -c $(expr ${#MIMIPASS_HOME} + 2)-" \
-      | xargs -I{} -P "${parallelism}" -n1 bash -c "echo {} | rev | cut -d '.' -f 2- | rev" \
-      | xargs -I{} -P "${parallelism}" -n1 echo "* {}" \
+      | cut -c $(expr ${#MIMIPASS_HOME} + 2)- \
+      | rev | cut -d '.' -f 2- | rev \
+      | xargs -n1 -I{} -P 4 echo "* {}" \
       | sort
 }
 
