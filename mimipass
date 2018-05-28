@@ -220,5 +220,38 @@ mimipass-set-trust() {
 }
 
 # Invoke!
-cmd=$1 && shift
-mimipass-$cmd $@
+set +u; cmd=$1; set -u
+
+if [ ! -z "${cmd}" ]; then
+    shift;
+    mimipass-$cmd $@
+else
+    cat <<EOF
+usage:
+
+  mimipass [command] [args]
+
+  ## Commands
+
+  list [pattern]
+
+  copy [password]
+  delete [password...]
+  get [password]
+  set [password]
+  edit [password]
+
+  ## Password generation
+
+  new [password]
+  new64 [password]
+  new-set [password]
+  new-set-copy [password]
+  new-account [password]
+
+  ## Key management
+
+  export
+  import
+EOF
+fi
