@@ -35,6 +35,8 @@ ensure-commands() { ensure "command -v" "$@" ;}
 ensure-commands gpg openssl gpg-agent tr xargs awk find
 ensure-env MIMIPASS_HOME MIMIPASS_RECIPIENT
 
+to-clipboard() { xclip -i -selection clipboard ;}
+
 #
 ## Password recovery
 #
@@ -58,7 +60,13 @@ mimipass-list() {
   local passwd_default_file="${MIMIPASS_HOME}/${passwd_name}/password.gpg"
 
   ([ -f "${passwd_file}" ] && echo "${passwd_file}") || \
-          ([ -f "${passwd_default_file}" ] && echo "${passwd_default_file}")
+      ([ -f "${passwd_default_file}" ] && echo "${passwd_default_file}")
+}
+
+mimipass-path() {
+  local passwd_name=$1
+  local passwd_file=$(--get-passwd-file "${passwd_name}")
+  echo "${passwd_file}"
 }
 
 mimipass-get() {
@@ -67,7 +75,7 @@ mimipass-get() {
   if [ -n "${passwd_file}" ]; then
       gpg -q --no-tty --use-agent -r $MIMIPASS_RECIPIENT -d "${passwd_file}"
   else
-      err "Couldn't find [ ${passwd_name} ] in the passwd list"
+    err "Couldn't find [ ${passwd_name} ] in the passwd list"
   fi
 }
 
@@ -75,8 +83,23 @@ mimipass-copy() {
   local passwd_name="$1"
   ensure-commands xclip
 
-  mimipass-get "$passwd_name" | trim-newline | xclip -i -selection clipboard \
+  mimipass-get "$passwd_name" | trim-newline | to-clipboard \
       && say "Password [ $passwd_name ] sent to clipboard :)"
+}
+
+mimipass-copy-full() {
+  local passwd_name="$1"
+  ensure-commands xclip
+
+  mimipass-get "$passwd_name" | to-clipboard \
+      && say "Password [ $passwd_name ] sent to clipboard :)"
+}
+
+mimipass-rename() {
+  local src="$1"
+  local dst="$2"
+
+  mv $(dirname $(mimipass-path "${src}")) "${MIMIPASS_HOME}/${dst}"
 }
 
 #
@@ -89,7 +112,7 @@ mimipass-copy() {
 }
 
 mimipass-set() {
-  local passwd_name=$1
+  local passwd_name=${1:-}
   local passwd_file="${MIMIPASS_HOME}/${passwd_name}.gpg"
 
   say "Type the text. Press C-d twice when done."
@@ -130,29 +153,41 @@ mimipass-new-set-copy() {
   local size=${2:-}
 
   mimipass-new-set $passwd_name $size 2>/dev/null
-  mimipass copy $passwd_name 2>/dev/null
+  mimipass-copy $passwd_name 2>/dev/null
   say "Done!"
 }
+
+--read-username() {
+  local username=${1:-}
+  if [ -n "$username" ]; then
+      echo "$username"
+  else
+    say "Whats your username? Press C-d twice when done."
+    cat
+  fi
+}
+
 mimipass-new-account() {
   local context=${1:-}
   local username=${2:-}
+  local passwd_name="$context/password"
 
   # check if the context is a valid one
   if [[ "${context:0:1}" =~ ^[./] ]]; then
       err "You must specify a valid context."
   fi
 
-  if [ -n "$username" ]; then
-      echo "$username" \
-          | mimipass set "$context/username" 2>/dev/null
-  else
-    say "Whats your username? Press C-d twice when done."
-    mimipass set "$context/username" 2>/dev/null
-  fi
+  local password="$(mimipass-new)"
+  local username="$(--read-username "${username}")"
 
-  mimipass new-set-copy "$context/password" 2>/dev/null
+  mimipass-set "${passwd_name}" <<EOF 2>/dev/null
+${password}
+username: ${username}
+EOF
+  echo -n "${password}" | to-clipboard
 
-  say "created $context/password && $context/username"
+  say
+  say "created ${passwd_name}"
   say "Done!"
 }
 
@@ -226,7 +261,7 @@ if [ ! -z "${cmd}" ]; then
     shift;
     mimipass-$cmd $@
 else
-    cat <<EOF
+  cat <<EOF
 usage:
 
   mimipass [command] [args]
