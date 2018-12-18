@@ -134,7 +134,7 @@ mimipass-edit() {
 }
 
 mimipass-new() {
-  local size=${1:-64}
+  local size=${1:-32}
 
   openssl rand -base64 300 \
       | tr -d '\n' \
